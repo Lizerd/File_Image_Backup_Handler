@@ -1,0 +1,70 @@
+<UserControl x:Class="MediaBackupTool.Views.Pages.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+        <StackPanel MaxWidth="500">
+            <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+            <!-- CPU Profile -->
+            <GroupBox Header="Performance" Padding="15" Margin="0,0,0,15">
+                <StackPanel>
+                    <TextBlock Text="CPU Profile:" Margin="0,0,0,5"/>
+                    <ComboBox ItemsSource="{Binding AvailableCpuProfiles}"
+                              SelectedItem="{Binding SelectedCpuProfile}"
+                              Margin="0,0,0,10"/>
+                    <TextBlock Text="Eco: Minimal impact, 1 worker" FontSize="11" Foreground="Gray"/>
+                    <TextBlock Text="Balanced: Default, moderate parallelism" FontSize="11" Foreground="Gray"/>
+                    <TextBlock Text="Fast: Higher parallelism" FontSize="11" Foreground="Gray"/>
+                    <TextBlock Text="Max: Maximum speed, dedicated run" FontSize="11" Foreground="Gray"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Archive Settings -->
+            <GroupBox Header="Archive Scanning" Padding="15" Margin="0,0,0,15">
+                <StackPanel>
+                    <CheckBox Content="Enable archive scanning (ZIP, RAR)"
+                              IsChecked="{Binding ArchiveScanningEnabled}"
+                              Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Max archive size (MB):" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding ArchiveMaxSizeMB}"
+                             IsEnabled="{Binding ArchiveScanningEnabled}"
+                             Margin="0,0,0,10"/>
+
+                    <CheckBox Content="Enable nested archive scanning"
+                              IsChecked="{Binding ArchiveNestedEnabled}"
+                              IsEnabled="{Binding ArchiveScanningEnabled}"
+                              Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Max nesting depth:" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding ArchiveMaxDepth}"
+                             IsEnabled="{Binding ArchiveNestedEnabled}"
+                             Width="60" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Movie Settings -->
+            <GroupBox Header="Movie Hashing" Padding="15" Margin="0,0,0,15">
+                <StackPanel>
+                    <TextBlock Text="Partial hash chunk size (MB):" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding MovieHashChunkSizeMB}" Width="60" HorizontalAlignment="Left"/>
+                    <TextBlock Text="Reads first and last N MB of movie files for faster hashing"
+                               FontSize="11" Foreground="Gray" Margin="0,5,0,0"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Copy Settings -->
+            <GroupBox Header="Copy" Padding="15">
+                <StackPanel>
+                    <CheckBox Content="Verify files after copy (recommended)"
+                              IsChecked="{Binding VerifyByDefault}"/>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

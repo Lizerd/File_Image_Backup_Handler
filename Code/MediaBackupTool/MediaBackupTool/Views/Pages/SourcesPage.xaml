@@ -1,0 +1,138 @@
+<UserControl x:Class="MediaBackupTool.Views.Pages.SourcesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="900">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Sources &amp; Filters" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="280"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Scan Roots List -->
+            <GroupBox Header="Scan Roots" Margin="0,0,15,0">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Add Folder..." Command="{Binding AddScanRootCommand}" Padding="15,8" Margin="0,0,5,0"/>
+                        <Button Content="Add Drive..." Command="{Binding AddDriveCommand}" Padding="15,8" Margin="0,0,5,0"/>
+                        <Button Content="Remove" Command="{Binding RemoveScanRootCommand}" Padding="15,8"
+                                IsEnabled="{Binding SelectedRoot, Converter={StaticResource NullToBoolConverter}}"/>
+                    </StackPanel>
+
+                    <ListBox ItemsSource="{Binding ScanRoots}"
+                             SelectedItem="{Binding SelectedRoot}"
+                             BorderThickness="1"
+                             BorderBrush="#CCCCCC">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="8,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <CheckBox IsChecked="{Binding IsEnabled}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,12,0"/>
+
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="13"/>
+                                        <TextBlock Text="{Binding Path}" FontSize="11" Foreground="Gray"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="400"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                            <TextBlock FontSize="11" Foreground="DimGray">
+                                                <Run Text="{Binding RootType, Mode=OneWay}"/> |
+                                                <Run Text="{Binding FileCount, StringFormat='{}{0:N0} files', Mode=OneWay}"/> |
+                                                <Run Text="{Binding LastScanDisplay, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <Border Grid.Column="2" CornerRadius="3" Padding="6,2" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#4CAF50"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding PathExists}" Value="False">
+                                                        <Setter Property="Background" Value="#F44336"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding RootType}" FontSize="10" Foreground="White"/>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </GroupBox>
+
+            <!-- Filters -->
+            <GroupBox Grid.Column="1" Header="File Types">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Select file types to scan:" Margin="0,0,0,10" FontWeight="SemiBold"/>
+
+                    <CheckBox Content="Images (JPG, PNG, GIF, etc.)"
+                              IsChecked="{Binding IncludeImages}"
+                              Margin="0,0,0,8"/>
+                    <TextBlock Text="jpg, jpeg, png, gif, bmp, tiff, webp, heic, raw, etc."
+                               FontSize="10" Foreground="Gray" Margin="20,0,0,12"/>
+
+                    <CheckBox Content="Movies (MP4, MKV, AVI, etc.)"
+                              IsChecked="{Binding IncludeMovies}"
+                              Margin="0,0,0,8"/>
+                    <TextBlock Text="mp4, mkv, avi, mov, wmv, webm, etc."
+                               FontSize="10" Foreground="Gray" Margin="20,0,0,12"/>
+
+                    <CheckBox Content="Audio (MP3, FLAC, WAV, etc.)"
+                              IsChecked="{Binding IncludeAudio}"
+                              Margin="0,0,0,8"/>
+                    <TextBlock Text="mp3, flac, wav, aac, ogg, m4a, etc."
+                               FontSize="10" Foreground="Gray" Margin="20,0,0,12"/>
+
+                    <Separator Margin="0,10"/>
+
+                    <TextBlock Text="Statistics" FontWeight="SemiBold" Margin="0,10,0,5"/>
+                    <TextBlock FontSize="12">
+                        <Run Text="Scan roots: "/><Run Text="{Binding ScanRoots.Count, Mode=OneWay}" FontWeight="SemiBold"/>
+                    </TextBlock>
+                    <TextBlock FontSize="12">
+                        <Run Text="Files from previous scans: "/><Run Text="{Binding TotalFiles, StringFormat='{}{0:N0}', Mode=OneWay}" FontWeight="SemiBold"/>
+                    </TextBlock>
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+
+        <!-- Error Message -->
+        <Border Grid.Row="2" Background="#FFF0F0" BorderBrush="#FFCCCC" BorderThickness="1"
+                Padding="10" Margin="0,10,0,0" CornerRadius="4"
+                Visibility="{Binding ErrorMessage, Converter={StaticResource NullToVisibilityConverter}}">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="#CC0000"/>
+        </Border>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Start Scan"
+                    Command="{Binding StartScanCommand}"
+                    Padding="20,10"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    IsEnabled="{Binding HasEnabledRoots}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

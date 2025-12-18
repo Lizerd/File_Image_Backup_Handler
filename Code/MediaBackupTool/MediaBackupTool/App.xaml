@@ -1,0 +1,49 @@
+<Application x:Class="MediaBackupTool.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:MediaBackupTool"
+             xmlns:converters="clr-namespace:MediaBackupTool.Converters"
+             xmlns:vm="clr-namespace:MediaBackupTool.ViewModels"
+             xmlns:pages="clr-namespace:MediaBackupTool.Views.Pages">
+    <Application.Resources>
+        <!-- Global Converters -->
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibility"/>
+        <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+        <converters:FileSizeConverter x:Key="FileSizeConverter"/>
+        <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
+
+        <!-- DataTemplates for ViewModels -->
+        <DataTemplate DataType="{x:Type vm:ProjectViewModel}">
+            <pages:ProjectPage/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SourcesViewModel}">
+            <pages:SourcesPage/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ScanViewModel}">
+            <pages:ScanPage/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PlanViewModel}">
+            <pages:PlanPage/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CopyViewModel}">
+            <pages:CopyPage/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DuplicatesViewModel}">
+            <pages:DuplicatesPage/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LogsViewModel}">
+            <pages:LogsPage/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <pages:SettingsPage/>
+        </DataTemplate>
+
+        <!-- Global Styles -->
+        <Style TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Application.Resources>
+</Application>

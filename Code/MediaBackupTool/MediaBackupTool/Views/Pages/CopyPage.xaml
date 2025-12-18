@@ -1,0 +1,100 @@
+<UserControl x:Class="MediaBackupTool.Views.Pages.CopyPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Copy" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+        <!-- Target Selection -->
+        <GroupBox Grid.Row="1" Header="Destination" Margin="0,0,0,20">
+            <Grid Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding TargetPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0"/>
+                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseTargetPathCommand}" Padding="15,5"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Controls -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,20">
+            <Button Content="Start Copy" Command="{Binding StartCopyCommand}" Padding="20,10" Margin="0,0,10,0"/>
+            <Button Content="Pause" Command="{Binding PauseCopyCommand}" Padding="20,10" Margin="0,0,10,0"/>
+            <Button Content="Cancel" Command="{Binding CancelCopyCommand}" Padding="20,10" Margin="0,0,20,0"/>
+            <CheckBox Content="Verify after copy" IsChecked="{Binding VerifyAfterCopy}" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Progress -->
+        <GroupBox Grid.Row="3" Header="Progress">
+            <StackPanel Margin="10">
+                <TextBlock Text="{Binding State.CurrentState, StringFormat='Status: {0}'}" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Current File:"/>
+                <TextBlock Text="{Binding CurrentFile}" TextTrimming="CharacterEllipsis" Foreground="Gray" Margin="0,0,0,10"/>
+
+                <ProgressBar Value="{Binding Progress}" Height="25" Margin="0,0,0,15"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="Files Copied"/>
+                        <TextBlock Text="{Binding FilesCopied}" FontSize="20" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding TotalToCopy, StringFormat='of {0}'}" Foreground="Gray"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Speed"/>
+                        <TextBlock Text="{Binding MbPerSecond, StringFormat='{}{0:N1} MB/s'}" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Failed"/>
+                        <TextBlock Text="{Binding FailedCount}" FontSize="20" FontWeight="Bold" Foreground="Red"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Failed Jobs -->
+        <GroupBox Grid.Row="4" Header="Failed Jobs" Margin="0,10,0,0"
+                  Visibility="{Binding FailedCount, Converter={StaticResource IntToVisibilityConverter}}">
+            <DockPanel Margin="10">
+                <Button DockPanel.Dock="Bottom" Content="Retry Failed"
+                        Command="{Binding RetryFailedCommand}"
+                        Padding="15,8" HorizontalAlignment="Left" Margin="0,10,0,0"/>
+                <ListBox ItemsSource="{Binding FailedJobs}" MaxHeight="150">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Error}" Foreground="Red" FontSize="11"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>
