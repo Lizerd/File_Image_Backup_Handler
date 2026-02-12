@@ -4,97 +4,352 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="800">
+             d:DesignHeight="700" d:DesignWidth="900">
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Copy" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+        <TextBlock Text="Copy Files" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
 
         <!-- Target Selection -->
-        <GroupBox Grid.Row="1" Header="Destination" Margin="0,0,0,20">
+        <GroupBox Grid.Row="1" Header="Destination Folder" Margin="0,0,0,15">
             <Grid Margin="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding TargetPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0"/>
-                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseTargetPathCommand}" Padding="15,5"/>
+                <TextBox Text="{Binding TargetPath, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,10,0" VerticalContentAlignment="Center" Padding="8,5"
+                         IsEnabled="{Binding IsCopying, Converter={StaticResource InverseBoolConverter}}"/>
+                <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseTargetPathCommand}"
+                        Padding="15,8"
+                        IsEnabled="{Binding IsCopying, Converter={StaticResource InverseBoolConverter}}"/>
             </Grid>
         </GroupBox>
 
         <!-- Controls -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,20">
-            <Button Content="Start Copy" Command="{Binding StartCopyCommand}" Padding="20,10" Margin="0,0,10,0"/>
-            <Button Content="Pause" Command="{Binding PauseCopyCommand}" Padding="20,10" Margin="0,0,10,0"/>
-            <Button Content="Cancel" Command="{Binding CancelCopyCommand}" Padding="20,10" Margin="0,0,20,0"/>
-            <CheckBox Content="Verify after copy" IsChecked="{Binding VerifyAfterCopy}" VerticalAlignment="Center"/>
-        </StackPanel>
+        <Border Grid.Row="2" Background="#F5F5F5" Padding="15" CornerRadius="6" Margin="0,0,0,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-        <!-- Progress -->
+                <StackPanel Orientation="Horizontal">
+                    <!-- Start button - visible when not copying -->
+                    <Button Content="Start Copy" Command="{Binding StartCopyCommand}"
+                            Padding="20,10" Margin="0,0,10,0"
+                            Background="#4CAF50" Foreground="White" BorderThickness="0" FontWeight="SemiBold"
+                            Visibility="{Binding IsCopying, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"/>
+
+                    <!-- Pause button - visible when copying and not paused -->
+                    <Button Content="Pause" Command="{Binding PauseCopyCommand}"
+                            Padding="20,10" Margin="0,0,10,0"
+                            Visibility="{Binding IsCopying, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <!-- Resume button - visible when paused -->
+                    <Button Content="Resume" Command="{Binding ResumeCopyCommand}"
+                            Padding="20,10" Margin="0,0,10,0"
+                            Background="#2196F3" Foreground="White" BorderThickness="0"
+                            Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <!-- Cancel button - visible when copying -->
+                    <Button Content="Cancel" Command="{Binding CancelCopyCommand}"
+                            Padding="20,10" Margin="0,0,20,0"
+                            Visibility="{Binding IsCopying, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <CheckBox Content="Verify after copy (recommended)"
+                              IsChecked="{Binding VerifyAfterCopy}" VerticalAlignment="Center"
+                              IsEnabled="{Binding IsCopying, Converter={StaticResource InverseBoolConverter}}"/>
+                </StackPanel>
+
+                <!-- Navigation buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal"
+                            Visibility="{Binding IsCopying, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+                    <Button Content="Back to Plan" Command="{Binding NavigateToPlanCommand}"
+                            Padding="15,8" Margin="0,0,10,0"/>
+                    <Button Content="Verify Files" Command="{Binding NavigateToVerificationCommand}"
+                            Padding="15,8" Margin="0,0,10,0"
+                            Background="#2196F3" Foreground="White" BorderThickness="0"
+                            Visibility="{Binding IsCompleted, Converter={StaticResource BoolToVisibilityConverter}}"
+                            ToolTip="Independent verification by comparing copied files with sources"/>
+                    <Button Content="View Duplicates" Command="{Binding NavigateToDuplicatesCommand}"
+                            Padding="15,8"
+                            Visibility="{Binding IsCompleted, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Progress Section -->
         <GroupBox Grid.Row="3" Header="Progress">
-            <StackPanel Margin="10">
-                <TextBlock Text="{Binding State.CurrentState, StringFormat='Status: {0}'}" FontWeight="SemiBold" Margin="0,0,0,10"/>
+            <Grid Margin="15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                <TextBlock Text="Current File:"/>
-                <TextBlock Text="{Binding CurrentFile}" TextTrimming="CharacterEllipsis" Foreground="Gray" Margin="0,0,0,10"/>
+                <!-- Status Header -->
+                <Border Background="#E3F2FD" Padding="10" CornerRadius="4" Margin="0,0,0,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding StatusMessage}" FontWeight="SemiBold" FontSize="14"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{Binding EstimatedTimeRemaining}"
+                                   Foreground="#1976D2" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
 
-                <ProgressBar Value="{Binding Progress}" Height="25" Margin="0,0,0,15"/>
+                <!-- Current File -->
+                <StackPanel Grid.Row="1" Margin="0,0,0,10">
+                    <TextBlock Text="Current File:" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                    <TextBlock Text="{Binding CurrentFile}" TextTrimming="CharacterEllipsis"
+                               Foreground="Gray" FontFamily="Consolas"/>
+                </StackPanel>
 
-                <Grid>
+                <!-- Progress Bar -->
+                <Grid Grid.Row="2" Margin="0,0,0,20">
+                    <ProgressBar Value="{Binding Progress}" Height="30" Minimum="0" Maximum="100"/>
+                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                               FontWeight="SemiBold">
+                        <Run Text="{Binding Progress, StringFormat={}{0:F1}}"/>
+                        <Run Text="%"/>
+                    </TextBlock>
+                </Grid>
+
+                <!-- Stats Grid -->
+                <Grid Grid.Row="3" Margin="0,0,0,15">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
 
-                    <StackPanel>
-                        <TextBlock Text="Files Copied"/>
-                        <TextBlock Text="{Binding FilesCopied}" FontSize="20" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding TotalToCopy, StringFormat='of {0}'}" Foreground="Gray"/>
-                    </StackPanel>
+                    <!-- Files Copied -->
+                    <Border Background="#E8F5E9" Padding="15,10" CornerRadius="4" Margin="0,0,5,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Files Copied" FontSize="11" Foreground="#2E7D32"
+                                       HorizontalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding FilesCopied, StringFormat={}{0:N0}}"
+                                           FontSize="22" FontWeight="Bold" Foreground="#2E7D32"/>
+                                <TextBlock Text="{Binding TotalToCopy, StringFormat=' / {0:N0}'}"
+                                           FontSize="14" Foreground="#81C784" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
 
-                    <StackPanel Grid.Column="1">
-                        <TextBlock Text="Speed"/>
-                        <TextBlock Text="{Binding MbPerSecond, StringFormat='{}{0:N1} MB/s'}" FontSize="20" FontWeight="Bold"/>
-                    </StackPanel>
+                    <!-- Files Verified -->
+                    <Border Grid.Column="1" Background="#E3F2FD" Padding="15,10" CornerRadius="4" Margin="5,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Verified" FontSize="11" Foreground="#1976D2"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding FilesVerified, StringFormat={}{0:N0}}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#1976D2"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
 
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Failed"/>
-                        <TextBlock Text="{Binding FailedCount}" FontSize="20" FontWeight="Bold" Foreground="Red"/>
-                    </StackPanel>
+                    <!-- Speed -->
+                    <Border Grid.Column="2" Background="#FFF3E0" Padding="15,10" CornerRadius="4" Margin="5,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Speed" FontSize="11" Foreground="#E65100"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock FontSize="22" FontWeight="Bold" Foreground="#E65100"
+                                       HorizontalAlignment="Center">
+                                <Run Text="{Binding MbPerSecond, StringFormat={}{0:F1}}"/>
+                                <Run Text=" MB/s" FontSize="12"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Skipped -->
+                    <Border Grid.Column="3" Background="#ECEFF1" Padding="15,10" CornerRadius="4" Margin="5,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Skipped" FontSize="11" Foreground="#546E7A"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding FilesSkipped, StringFormat={}{0:N0}}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#546E7A"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Failed -->
+                    <Border Grid.Column="4" Background="#FFEBEE" Padding="15,10" CornerRadius="4" Margin="5,0,0,0">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Failed" FontSize="11" Foreground="#C62828"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding FailedCount, StringFormat={}{0:N0}}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#C62828"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
-            </StackPanel>
+
+                <!-- Bytes Progress -->
+                <TextBlock Grid.Row="4" Foreground="Gray" FontSize="12" VerticalAlignment="Top">
+                    <Run Text="Data transferred: "/>
+                    <Run Text="{Binding BytesCopied, StringFormat={}{0:N0}, Mode=OneWay}"/>
+                    <Run Text=" / "/>
+                    <Run Text="{Binding TotalBytes, StringFormat={}{0:N0}, Mode=OneWay}"/>
+                    <Run Text=" bytes"/>
+                </TextBlock>
+            </Grid>
         </GroupBox>
 
-        <!-- Failed Jobs -->
-        <GroupBox Grid.Row="4" Header="Failed Jobs" Margin="0,10,0,0"
+        <!-- Completion Summary Panel - shows when copy is complete -->
+        <GroupBox Grid.Row="4" Header="Completion Summary" Margin="0,15,0,0"
+                  Visibility="{Binding ShowCompletionSummary, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid Margin="15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left side: Performance stats -->
+                <StackPanel>
+                    <TextBlock Text="Performance Statistics" FontWeight="Bold" FontSize="14" Margin="0,0,0,15"/>
+
+                    <!-- Stats Grid -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Row 1 -->
+                        <TextBlock Text="Total Duration:" Foreground="Gray" Margin="0,0,10,8"/>
+                        <TextBlock Grid.Column="1" Text="{Binding TotalDuration}" FontWeight="SemiBold" Margin="0,0,30,8"/>
+
+                        <TextBlock Grid.Column="2" Text="Total Size:" Foreground="Gray" Margin="0,0,10,8"/>
+                        <TextBlock Grid.Column="3" Text="{Binding TotalSizeCopied}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+                        <!-- Row 2 -->
+                        <TextBlock Grid.Row="1" Text="Average Speed:" Foreground="Gray" Margin="0,0,10,8"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AverageSpeed}" FontWeight="SemiBold" Foreground="#1976D2" Margin="0,0,30,8"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Files/Second:" Foreground="Gray" Margin="0,0,10,8"/>
+                        <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding FilesPerSecond}" FontWeight="SemiBold" Foreground="#1976D2" Margin="0,0,0,8"/>
+
+                        <!-- Row 3 -->
+                        <TextBlock Grid.Row="2" Text="Time per File:" Foreground="Gray" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TimePerFile}" FontWeight="SemiBold" Margin="0,0,30,0"/>
+                    </Grid>
+
+                    <!-- Calculation example -->
+                    <Border Background="#F5F5F5" Padding="10" CornerRadius="4" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Quick Reference" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <TextBlock Foreground="Gray" FontSize="12" TextWrapping="Wrap">
+                                <Run Text="At "/>
+                                <Run Text="{Binding AverageSpeed, Mode=OneWay}" FontWeight="SemiBold"/>
+                                <Run Text=", copying 1 GB takes approximately "/>
+                                <Run Text="{Binding SecondsPerGB, Mode=OneWay}" FontWeight="SemiBold"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right side: Extension breakdown -->
+                <Border Grid.Column="1" Background="#FAFAFA" Padding="15" CornerRadius="4" MinWidth="280">
+                    <StackPanel>
+                        <TextBlock Text="Files by Type" FontWeight="Bold" FontSize="14" Margin="0,0,0,10"/>
+
+                        <ItemsControl ItemsSource="{Binding ExtensionBreakdown}" MaxHeight="200">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Text="{Binding Extension}" FontWeight="SemiBold" FontFamily="Consolas"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding FileCount, StringFormat='{}{0:N0} files'}" Foreground="#666"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding SizeFormatted}" Foreground="#1976D2" Margin="15,0,0,0"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Show more indicator if there are many extensions -->
+                        <TextBlock Text="(Showing all file types)" FontSize="11" Foreground="#999"
+                                   Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </GroupBox>
+
+        <!-- Failed Jobs Panel -->
+        <GroupBox Grid.Row="5" Header="Failed Jobs" Margin="0,15,0,0"
                   Visibility="{Binding FailedCount, Converter={StaticResource IntToVisibilityConverter}}">
-            <DockPanel Margin="10">
-                <Button DockPanel.Dock="Bottom" Content="Retry Failed"
-                        Command="{Binding RetryFailedCommand}"
-                        Padding="15,8" HorizontalAlignment="Left" Margin="0,10,0,0"/>
-                <ListBox ItemsSource="{Binding FailedJobs}" MaxHeight="150">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel>
-                                <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Error}" Foreground="Red" FontSize="11"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" MaxHeight="200"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DataGrid ItemsSource="{Binding FailedJobs}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="200"/>
+                        <DataGridTextColumn Header="Error" Binding="{Binding Error}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#C62828"/>
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                    <Setter Property="ToolTip" Value="{Binding Error}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Attempts" Binding="{Binding Attempts}" Width="70"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button Content="Retry Failed Jobs" Command="{Binding RetryFailedCommand}"
+                            Padding="15,8"
+                            Background="#FF9800" Foreground="White" BorderThickness="0"/>
+                    <TextBlock Margin="15,0,0,0" VerticalAlignment="Center" Foreground="Gray">
+                        <Run Text="Failed jobs will be retried up to 3 times with increasing delays"/>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
         </GroupBox>
     </Grid>
+    </ScrollViewer>
 </UserControl>

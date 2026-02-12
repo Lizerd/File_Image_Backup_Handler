@@ -97,17 +97,29 @@ public partial class App : Application
         });
 
         // Services
+        services.AddSingleton<IPowerManagementService, PowerManagementService>();
         services.AddSingleton<IProjectService, ProjectService>();
         services.AddSingleton<IFileFilterService, FileFilterService>();
         services.AddSingleton<IScanService, ScanService>();
+        services.AddSingleton<IHashService, HashService>();
+        services.AddSingleton<IThumbnailService, ThumbnailService>();
+        services.AddSingleton<ICopyService, CopyService>();
+        services.AddSingleton<IVerificationService, VerificationService>();
+
+        // Repositories
+        services.AddSingleton<FolderNodeRepository>();
+        services.AddSingleton<UniqueFileRepository>();
+        services.AddSingleton<CopyJobRepository>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();
         services.AddTransient<ProjectViewModel>();
         services.AddTransient<SourcesViewModel>();
         services.AddTransient<ScanViewModel>();
+        services.AddTransient<HashViewModel>();
         services.AddTransient<PlanViewModel>();
         services.AddTransient<CopyViewModel>();
+        services.AddTransient<VerificationViewModel>();
         services.AddTransient<DuplicatesViewModel>();
         services.AddTransient<LogsViewModel>();
         services.AddTransient<SettingsViewModel>();

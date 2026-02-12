@@ -64,6 +64,16 @@ public interface IProjectService
     Task RemoveScanRootAsync(long scanRootId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets statistics about the current project (file counts, etc.).
+    /// </summary>
+    Task<ProjectStats> GetProjectStatsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates the plan by creating UniqueFile entries from hashed files.
+    /// </summary>
+    Task<PlanGenerationResult> GeneratePlanAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Event raised when project is opened or closed.
     /// </summary>
     event EventHandler<ProjectChangedEventArgs>? ProjectChanged;
@@ -76,4 +86,29 @@ public class ProjectChangedEventArgs : EventArgs
 {
     public bool IsOpen { get; set; }
     public string? ProjectPath { get; set; }
+}
+
+/// <summary>
+/// Statistics about the current project.
+/// </summary>
+public class ProjectStats
+{
+    public int TotalFiles { get; set; }
+    public int HashedFiles { get; set; }
+    public int UniqueFiles { get; set; }
+    public int DuplicateFiles { get; set; }
+    public long TotalBytes { get; set; }
+    public int ScanRootCount { get; set; }
+}
+
+/// <summary>
+/// Result of plan generation.
+/// </summary>
+public class PlanGenerationResult
+{
+    public bool Success { get; set; }
+    public int UniqueFilesCreated { get; set; }
+    public int DuplicatesFound { get; set; }
+    public int FoldersCreated { get; set; }
+    public string? ErrorMessage { get; set; }
 }

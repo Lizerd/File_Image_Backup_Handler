@@ -52,8 +52,10 @@ public partial class NavigationService : ObservableObject
             { "Project", typeof(ViewModels.ProjectViewModel) },
             { "Sources", typeof(ViewModels.SourcesViewModel) },
             { "Scan", typeof(ViewModels.ScanViewModel) },
+            { "Hash", typeof(ViewModels.HashViewModel) },
             { "Plan", typeof(ViewModels.PlanViewModel) },
             { "Copy", typeof(ViewModels.CopyViewModel) },
+            { "Verification", typeof(ViewModels.VerificationViewModel) },
             { "Duplicates", typeof(ViewModels.DuplicatesViewModel) },
             { "Logs", typeof(ViewModels.LogsViewModel) },
             { "Settings", typeof(ViewModels.SettingsViewModel) }

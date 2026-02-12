@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="800">
+             d:DesignHeight="700" d:DesignWidth="1200">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -15,64 +15,330 @@
 
         <TextBlock Text="Plan" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
-            <Button Content="Generate Plan" Command="{Binding GeneratePlanCommand}" Padding="20,10" Margin="0,0,10,0"/>
-            <TextBlock VerticalAlignment="Center">
-                <Run Text="Total: "/>
-                <Run Text="{Binding TotalUniqueFiles, Mode=OneWay}" FontWeight="SemiBold"/>
-                <Run Text=" unique files, "/>
-                <Run Text="{Binding TotalDuplicates, Mode=OneWay}" FontWeight="SemiBold"/>
-                <Run Text=" duplicates"/>
-            </TextBlock>
-        </StackPanel>
+        <!-- Workflow Status Panel - shows when plan data is not ready -->
+        <Border Grid.Row="1" Background="#FFF8E1" BorderBrush="#FFE082" BorderThickness="1"
+                Padding="20" Margin="0,0,0,15" CornerRadius="6"
+                Visibility="{Binding HasPlanData, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <Grid Grid.Row="2">
+                <!-- Status Header -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBlock Text="{Binding WorkflowStatus}" FontSize="18" FontWeight="Bold" Foreground="#F57C00"/>
+                </StackPanel>
+
+                <!-- Status Message -->
+                <TextBlock Grid.Row="1" Text="{Binding WorkflowMessage}" TextWrapping="Wrap"
+                           FontSize="14" Foreground="#5D4037" Margin="0,0,0,15"/>
+
+                <!-- Action Buttons based on what's needed -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal">
+                    <!-- Show when scanning is needed -->
+                    <Button Content="Go to Sources" Command="{Binding NavigateToSourcesCommand}"
+                            Padding="20,10" Margin="0,0,10,0"
+                            Visibility="{Binding NeedsScanning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <!-- Show when hashing is needed -->
+                    <Button Content="Start Hashing" Command="{Binding NavigateToHashCommand}"
+                            Padding="20,10" Margin="0,0,10,0"
+                            Background="#2196F3" Foreground="White" BorderThickness="0"
+                            Visibility="{Binding NeedsHashing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <Button Content="Back to Scan" Command="{Binding NavigateToScanCommand}"
+                            Padding="20,10" Margin="0,0,10,0"
+                            Visibility="{Binding NeedsHashing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <!-- Show when planning is needed (after hashing) -->
+                    <Button Content="Generate Plan" Command="{Binding GeneratePlanCommand}"
+                            Padding="20,10" Margin="0,0,10,0"
+                            Background="#4CAF50" Foreground="White" BorderThickness="0"
+                            FontWeight="SemiBold"
+                            Visibility="{Binding NeedsPlanning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <Button Content="Back to Hash" Command="{Binding NavigateToHashCommand}"
+                            Padding="20,10" Margin="0,0,10,0"
+                            Visibility="{Binding NeedsPlanning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Plan Ready Header - shows when plan data is ready -->
+        <Border Grid.Row="1" Background="#E8F5E9" BorderBrush="#A5D6A7" BorderThickness="1"
+                Padding="15" Margin="0,0,0,15" CornerRadius="6"
+                Visibility="{Binding HasPlanData, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Plan Ready" FontSize="16" FontWeight="Bold" Foreground="#2E7D32" Margin="0,0,0,5"/>
+                    <TextBlock VerticalAlignment="Center">
+                        <Run Text="Found "/>
+                        <Run Text="{Binding TotalUniqueFiles, Mode=OneWay}" FontWeight="Bold" Foreground="#2E7D32"/>
+                        <Run Text=" unique files and "/>
+                        <Run Text="{Binding TotalDuplicates, Mode=OneWay}" FontWeight="Bold" Foreground="#E65100"/>
+                        <Run Text=" duplicates to skip"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Disk Size Estimation Panel -->
+                <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="#81C784" BorderThickness="1"
+                        Padding="15,10" Margin="15,0" CornerRadius="4" MinWidth="200">
+                    <StackPanel>
+                        <TextBlock Text="Estimated Disk Space Required" FontSize="11" Foreground="#666" Margin="0,0,0,3"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding EstimatedSizeFormatted}" FontSize="20" FontWeight="Bold" Foreground="#1565C0"/>
+                            <TextBlock Text=" (" Foreground="#666" VerticalAlignment="Bottom" Margin="5,0,0,2"/>
+                            <TextBlock Text="{Binding EstimatedFileCount, StringFormat='{}{0:N0} files'}" Foreground="#666" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                            <TextBlock Text=")" Foreground="#666" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                        </StackPanel>
+                        <TextBlock Text="Updating..." FontSize="10" Foreground="#999" FontStyle="Italic"
+                                   Visibility="{Binding IsRecalculatingSize, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="Regenerate Plan" Command="{Binding GeneratePlanCommand}" Padding="15,8" Margin="0,0,10,0"/>
+                    <Button Content="Next: Copy Files" Command="{Binding NavigateToCopyCommand}" Padding="15,8"
+                            Background="#4CAF50" Foreground="White" BorderThickness="0" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area - Three Panel Layout -->
+        <Grid Grid.Row="2" Visibility="{Binding HasPlanData, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="350"/>
+                <ColumnDefinition Width="280" MinWidth="200"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*" MinWidth="300"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="350" MinWidth="250"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Folder Tree -->
-            <GroupBox Header="Destination Folders" Margin="0,0,10,0">
+            <!-- Panel 1: Folder Tree -->
+            <GroupBox Header="Destination Folders">
                 <TreeView ItemsSource="{Binding RootFolders}"
                           VirtualizingStackPanel.IsVirtualizing="True"
-                          VirtualizingStackPanel.VirtualizationMode="Recycling">
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          SelectedItemChanged="TreeView_SelectedItemChanged">
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                        </Style>
+                    </TreeView.ItemContainerStyle>
                     <TreeView.ItemTemplate>
                         <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                            <StackPanel Orientation="Horizontal">
-                                <CheckBox IsChecked="{Binding CopyEnabled}" Margin="0,0,5,0"/>
-                                <TextBlock Text="{Binding DisplayName}"/>
-                                <TextBlock Text="{Binding UniqueCount, StringFormat=' ({0})'}" Foreground="Gray"/>
+                            <StackPanel Orientation="Horizontal" Margin="2">
+                                <CheckBox IsChecked="{Binding CopyEnabled}" Margin="0,0,5,0" VerticalAlignment="Center"
+                                          Click="FolderCheckBox_Click"/>
+                                <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding UniqueCount, StringFormat=' ({0:N0})'}" Foreground="Gray" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding DuplicateDisplayText}" Foreground="#E65100" FontWeight="SemiBold" VerticalAlignment="Center"
+                                           Visibility="{Binding HasDuplicates, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <TextBlock Text="{Binding SizeFormatted, StringFormat=' - {0}'}" Foreground="#666" FontSize="11" VerticalAlignment="Center"/>
                             </StackPanel>
                         </HierarchicalDataTemplate>
                     </TreeView.ItemTemplate>
                 </TreeView>
             </GroupBox>
 
-            <!-- Details Panel -->
-            <GroupBox Grid.Column="1" Header="Details">
-                <StackPanel Margin="10">
-                    <TextBlock Text="Select a folder to see details" Foreground="Gray"
-                               Visibility="{Binding SelectedFolder, Converter={StaticResource NullToVisibility}, ConverterParameter=Invert}"/>
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="Transparent"/>
 
-                    <StackPanel Visibility="{Binding SelectedFolder, Converter={StaticResource NullToVisibility}}">
-                        <TextBlock Text="{Binding SelectedFolder.DisplayName}" FontWeight="Bold" FontSize="14" Margin="0,0,0,10"/>
-                        <TextBlock Text="{Binding SelectedFolder.WhyExplanation}" TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Files in this folder:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                        <ListBox ItemsSource="{Binding FilesInFolder}" Height="300">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Margin="5">
-                                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
-                                        <TextBlock Text="{Binding SourcePath}" FontSize="11" Foreground="Gray" TextTrimming="CharacterEllipsis"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+            <!-- Panel 2: Files in Selected Folder -->
+            <GroupBox Grid.Column="2">
+                <GroupBox.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Files in Folder"/>
+                        <TextBlock Text="{Binding TotalFilesInFolder, StringFormat=' ({0:N0} files)'}" Foreground="Gray"/>
+                        <TextBlock Text=" - Double-click to open, right-click for options" Foreground="#999" FontSize="10" VerticalAlignment="Center" Margin="10,0,0,0"/>
                     </StackPanel>
-                </StackPanel>
+                </GroupBox.Header>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- File List -->
+                    <DataGrid ItemsSource="{Binding FilesInFolder}"
+                              SelectedItem="{Binding SelectedFile}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              MouseDoubleClick="FileList_MouseDoubleClick">
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Open File" Click="OpenFile_Click" FontWeight="SemiBold"/>
+                                <MenuItem Header="Open Containing Folder" Click="OpenFolder_Click"/>
+                                <Separator/>
+                                <MenuItem Header="Copy Full Path" Click="CopyFullPath_Click"/>
+                                <MenuItem Header="Copy Folder Path" Click="CopyFolderPath_Click"/>
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="" Binding="{Binding CopyEnabled}" Width="30"/>
+                            <DataGridTextColumn Header="File Name" Binding="{Binding FileName}" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="ToolTip" Value="{Binding FullPath}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Size" Binding="{Binding SizeFormatted}" Width="80"/>
+                            <DataGridTextColumn Header="Dups" Binding="{Binding DuplicateCount}" Width="50"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Loading Indicator -->
+                    <Border Background="#80FFFFFF" Visibility="{Binding IsLoadingFiles, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="Loading..." HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Pagination -->
+                    <Border Grid.Row="1" Background="#F5F5F5" Padding="10,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock VerticalAlignment="Center">
+                                <Run Text="Page "/>
+                                <Run Text="{Binding CurrentPage, Mode=OneWay}"/>
+                                <Run Text=" of "/>
+                                <Run Text="{Binding TotalPages, Mode=OneWay}"/>
+                            </TextBlock>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="&lt;" Command="{Binding PreviousPageCommand}" Padding="10,5" Margin="0,0,5,0"
+                                        IsEnabled="{Binding CurrentPage, Converter={StaticResource GreaterThanConverter}, ConverterParameter=1}"/>
+                                <Button Content="&gt;" Command="{Binding NextPageCommand}" Padding="10,5"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </GroupBox>
+
+            <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch" Background="Transparent"/>
+
+            <!-- Panel 3: Preview and Details -->
+            <GroupBox Grid.Column="4" Header="Preview &amp; Details">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <!-- Preview Image -->
+                        <Border Background="#F0F0F0" Height="250" Margin="0,0,0,15" CornerRadius="4">
+                            <Grid>
+                                <!-- Placeholder when no image -->
+                                <TextBlock Text="Select a file to preview"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="Gray"
+                                           Visibility="{Binding PreviewImage, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}"/>
+
+                                <!-- Preview Image -->
+                                <Image Source="{Binding PreviewImage}" Stretch="Uniform" Margin="5"
+                                       Visibility="{Binding PreviewImage, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                                <!-- Loading Indicator -->
+                                <Border Background="#80FFFFFF"
+                                        Visibility="{Binding IsLoadingPreview, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Loading preview..." HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- File Details -->
+                        <StackPanel Visibility="{Binding SelectedFile, Converter={StaticResource NullToVisibilityConverter}}">
+                            <TextBlock Text="{Binding SelectedFile.FileName}" FontWeight="Bold" FontSize="14"
+                                       TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Size:" Foreground="Gray"/>
+                                <TextBlock Grid.Column="1" Text="{Binding SelectedFile.SizeFormatted}"/>
+
+                                <TextBlock Grid.Row="1" Text="Duplicates:" Foreground="Gray"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1">
+                                    <Run Text="{Binding SelectedFile.DuplicateCount, Mode=OneWay}"/>
+                                    <Run Text=" copies found"/>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="2" Text="Hash:" Foreground="Gray"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedFile.HashHex}"
+                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedFile.HashHex}"
+                                           FontFamily="Consolas" FontSize="11"/>
+                            </Grid>
+
+                            <!-- Duplicate Locations -->
+                            <TextBlock Text="Source Locations:" FontWeight="SemiBold" Margin="0,10,0,5"/>
+                            <TextBlock Text="Double-click to open, right-click for options" FontSize="10" Foreground="#999" Margin="0,0,0,5"/>
+                            <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" MaxHeight="200">
+                                <ListBox ItemsSource="{Binding DuplicateLocations}"
+                                         BorderThickness="0"
+                                         VirtualizingStackPanel.IsVirtualizing="True"
+                                         MouseDoubleClick="DuplicateLocation_MouseDoubleClick">
+                                    <ListBox.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Open File" Click="DuplicateOpenFile_Click" FontWeight="SemiBold"/>
+                                            <MenuItem Header="Open Containing Folder" Click="DuplicateOpenFolder_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="Copy Full Path" Click="DuplicateCopyFullPath_Click"/>
+                                            <MenuItem Header="Copy Folder Path" Click="DuplicateCopyFolderPath_Click"/>
+                                        </ContextMenu>
+                                    </ListBox.ContextMenu>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="5,3" Cursor="Hand">
+                                                <TextBlock Text="{Binding ScanRootLabel}" FontWeight="SemiBold" FontSize="11" Foreground="#1976D2"/>
+                                                <TextBlock Text="{Binding FullPath}" FontSize="11" Foreground="#666"
+                                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding FullPath}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Empty State -->
+                        <TextBlock Text="Select a file from the list to see details"
+                                   Foreground="Gray" TextAlignment="Center" Margin="0,20,0,0"
+                                   Visibility="{Binding SelectedFile, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}"/>
+                    </StackPanel>
+                </ScrollViewer>
             </GroupBox>
         </Grid>
+
+        <!-- Empty State when no plan -->
+        <Border Grid.Row="2" Background="#FAFAFA" CornerRadius="6"
+                Visibility="{Binding HasPlanData, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="No plan generated yet" FontSize="20" Foreground="Gray"
+                           HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                <TextBlock Text="Complete the workflow steps above to view and edit the backup plan."
+                           FontSize="14" Foreground="DarkGray" HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="400"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

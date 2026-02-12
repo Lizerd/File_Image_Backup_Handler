@@ -16,6 +16,7 @@ public class ScanService : IScanService
 {
     private readonly IFileFilterService _filterService;
     private readonly IProjectService _projectService;
+    private readonly IPowerManagementService _powerManagement;
     private readonly ILogger<ScanService> _logger;
     private readonly ILoggerFactory _loggerFactory;
 
@@ -43,11 +44,13 @@ public class ScanService : IScanService
     public ScanService(
         IFileFilterService filterService,
         IProjectService projectService,
+        IPowerManagementService powerManagement,
         ILogger<ScanService> logger,
         ILoggerFactory loggerFactory)
     {
         _filterService = filterService;
         _projectService = projectService;
+        _powerManagement = powerManagement;
         _logger = logger;
         _loggerFactory = loggerFactory;
     }
@@ -67,6 +70,9 @@ public class ScanService : IScanService
             _currentProgress = new ScanProgress { StartTime = DateTime.Now };
         }
 
+        // Prevent system sleep during scan
+        _powerManagement.BeginOperation("Scan");
+
         // Get repositories from project service
         var projectServiceImpl = (ProjectService)_projectService;
         var scanRootRepo = projectServiceImpl.GetScanRootRepository();
@@ -83,7 +89,7 @@ public class ScanService : IScanService
                 {
                     _logger.LogWarning("No scan roots configured");
                     OnScanCompleted(true, 0, 0, TimeSpan.Zero);
-                    return;
+                    return; // finally block will call EndOperation
                 }
 
                 _logger.LogInformation("Starting scan of {Count} root(s)", scanRoots.Count);
@@ -112,20 +118,31 @@ public class ScanService : IScanService
                 // Wait for writer to finish
                 await writerTask;
 
+                // Raise final progress event to ensure UI is updated with final counts
+                // (progress updates are throttled, so last update may not reflect final count)
+                RaiseProgressChanged();
+
                 var progress = CurrentProgress;
                 OnScanCompleted(true, progress.TotalFilesFound, progress.ErrorCount, progress.Elapsed);
             }
             catch (OperationCanceledException)
             {
                 _logger.LogInformation("Scan cancelled");
+                RaiseProgressChanged(); // Ensure UI has final counts
                 var progress = CurrentProgress;
                 OnScanCompleted(false, progress.TotalFilesFound, progress.ErrorCount, progress.Elapsed, "Scan was cancelled");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Scan failed with error");
+                RaiseProgressChanged(); // Ensure UI has final counts
                 var progress = CurrentProgress;
                 OnScanCompleted(false, progress.TotalFilesFound, progress.ErrorCount, progress.Elapsed, ex.Message);
+            }
+            finally
+            {
+                // Allow system sleep after scan completes
+                _powerManagement.EndOperation("Scan");
             }
         }, token);
     }
@@ -167,6 +184,11 @@ public class ScanService : IScanService
             return;
         }
 
+        // Clear existing files for this root before rescanning to avoid duplicates
+        var projectServiceImpl = (ProjectService)_projectService;
+        var context = projectServiceImpl.GetContext();
+        await ClearExistingFilesForRootAsync(context, root.Id, token);
+
         var rootFileCount = 0;
         long rootTotalBytes = 0;
 
@@ -204,7 +226,7 @@ public class ScanService : IScanService
                 var dirInfo = new DirectoryInfo(currentDir);
                 if ((dirInfo.Attributes & FileAttributes.ReparsePoint) != 0)
                 {
-                    _logger.LogDebug("Skipping reparse point: {Path}", currentDir);
+                    // Note: Per-reparse-point logging removed to reduce log volume
                     continue;
                 }
             }
@@ -417,5 +439,58 @@ public class ScanService : IScanService
         var rootUri = new Uri(rootPath.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
         var fileUri = new Uri(fullPath);
         return Uri.UnescapeDataString(rootUri.MakeRelativeUri(fileUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+    }
+
+    /// <summary>
+    /// Clears existing file instances for a scan root before rescanning.
+    /// Also clears related plan data (UniqueFiles, FolderNodes) since they will be invalid.
+    /// </summary>
+    private async Task ClearExistingFilesForRootAsync(Data.DatabaseContext context, long scanRootId, CancellationToken token)
+    {
+        using var connection = await context.CreateConnectionAsync();
+
+        // First, clear the plan data since it depends on FileInstances
+        // The user will need to regenerate the plan after rescanning
+        using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = "DELETE FROM UniqueFiles";
+            var uniqueDeleted = await cmd.ExecuteNonQueryAsync(token);
+            if (uniqueDeleted > 0)
+            {
+                _logger.LogInformation("Cleared {Count} UniqueFiles entries (plan will need regeneration)", uniqueDeleted);
+            }
+        }
+
+        using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = "DELETE FROM FolderNodes";
+            var foldersDeleted = await cmd.ExecuteNonQueryAsync(token);
+            if (foldersDeleted > 0)
+            {
+                _logger.LogInformation("Cleared {Count} FolderNodes entries", foldersDeleted);
+            }
+        }
+
+        // Now clear existing file instances for this scan root
+        using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = "DELETE FROM FileInstances WHERE ScanRootId = @ScanRootId";
+            cmd.Parameters.AddWithValue("@ScanRootId", scanRootId);
+            var filesDeleted = await cmd.ExecuteNonQueryAsync(token);
+            _logger.LogInformation("Cleared {Count} existing FileInstances for ScanRoot {Id}", filesDeleted, scanRootId);
+        }
+
+        // Clean up orphaned hashes (hashes no longer referenced by any FileInstance)
+        using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = @"
+                DELETE FROM Hashes
+                WHERE Id NOT IN (SELECT DISTINCT HashId FROM FileInstances WHERE HashId IS NOT NULL)";
+            var hashesDeleted = await cmd.ExecuteNonQueryAsync(token);
+            if (hashesDeleted > 0)
+            {
+                _logger.LogInformation("Cleaned up {Count} orphaned hash entries", hashesDeleted);
+            }
+        }
     }
 }

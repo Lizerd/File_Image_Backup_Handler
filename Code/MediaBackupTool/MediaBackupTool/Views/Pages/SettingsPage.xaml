@@ -59,10 +59,38 @@
             </GroupBox>
 
             <!-- Copy Settings -->
-            <GroupBox Header="Copy" Padding="15">
+            <GroupBox Header="Copy" Padding="15" Margin="0,0,0,15">
                 <StackPanel>
                     <CheckBox Content="Verify files after copy (recommended)"
                               IsChecked="{Binding VerifyByDefault}"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Power Management -->
+            <GroupBox Header="Power Management" Padding="15">
+                <StackPanel>
+                    <CheckBox Content="Prevent sleep while working"
+                              IsChecked="{Binding PreventSleepEnabled}"
+                              Margin="0,0,0,10"/>
+                    <TextBlock Text="When enabled, the PC will not go to sleep or shut down while scanning, hashing, copying, or verifying files. The screen may still turn off."
+                               FontSize="11" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                    <!-- Current Status -->
+                    <Border Background="#F5F5F5" Padding="10" CornerRadius="4">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <TextBlock Text="Status: " FontWeight="SemiBold"/>
+                                <TextBlock Text="Preventing Sleep" Foreground="#4CAF50" FontWeight="SemiBold"
+                                           Visibility="{Binding IsPreventingSleep, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                <TextBlock Text="Idle" Foreground="Gray"
+                                           Visibility="{Binding IsPreventingSleep, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Active Operations: " Foreground="Gray"/>
+                                <TextBlock Text="{Binding ActiveOperationCount}" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </GroupBox>
         </StackPanel>

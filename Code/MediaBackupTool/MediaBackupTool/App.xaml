@@ -14,6 +14,8 @@
         <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
         <converters:FileSizeConverter x:Key="FileSizeConverter"/>
         <converters:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
+        <converters:GreaterThanConverter x:Key="GreaterThanConverter"/>
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
 
         <!-- DataTemplates for ViewModels -->
         <DataTemplate DataType="{x:Type vm:ProjectViewModel}">
@@ -25,11 +27,17 @@
         <DataTemplate DataType="{x:Type vm:ScanViewModel}">
             <pages:ScanPage/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:HashViewModel}">
+            <pages:HashPage/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:PlanViewModel}">
             <pages:PlanPage/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:CopyViewModel}">
             <pages:CopyPage/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:VerificationViewModel}">
+            <pages:VerificationPage/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DuplicatesViewModel}">
             <pages:DuplicatesPage/>

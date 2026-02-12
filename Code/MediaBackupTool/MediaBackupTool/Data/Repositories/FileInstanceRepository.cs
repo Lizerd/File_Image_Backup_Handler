@@ -58,8 +58,9 @@ public class FileInstanceRepository
         {
             using var cmd = connection.CreateCommand();
             cmd.Transaction = transaction;
+            // Use INSERT OR IGNORE to silently skip duplicates if unique constraint is violated
             cmd.CommandText = @"
-                INSERT INTO FileInstances (ScanRootId, RelativePath, FileName, Extension, SizeBytes,
+                INSERT OR IGNORE INTO FileInstances (ScanRootId, RelativePath, FileName, Extension, SizeBytes,
                     ModifiedUtc, Status, Category, DiscoveredUtc)
                 VALUES (@ScanRootId, @RelativePath, @FileName, @Extension, @SizeBytes,
                     @ModifiedUtc, @Status, @Category, @DiscoveredUtc)";

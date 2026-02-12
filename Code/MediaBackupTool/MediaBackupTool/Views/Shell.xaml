@@ -56,27 +56,39 @@
 
                     <Separator Margin="0,10"/>
 
-                    <Button Content="Sources &amp; Filters"
+                    <Button Content="1. Sources &amp; Filters"
                             Command="{Binding NavigateToCommand}"
                             CommandParameter="Sources"
                             IsEnabled="{Binding IsProjectLoaded}"
                             Margin="0,2" Padding="10,8"/>
 
-                    <Button Content="Scan &amp; Hash"
+                    <Button Content="2. Scan Files"
                             Command="{Binding NavigateToCommand}"
                             CommandParameter="Scan"
                             IsEnabled="{Binding IsProjectLoaded}"
                             Margin="0,2" Padding="10,8"/>
 
-                    <Button Content="Plan"
+                    <Button Content="3. Hash Files"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="Hash"
+                            IsEnabled="{Binding IsProjectLoaded}"
+                            Margin="0,2" Padding="10,8"/>
+
+                    <Button Content="4. Plan"
                             Command="{Binding NavigateToCommand}"
                             CommandParameter="Plan"
                             IsEnabled="{Binding IsProjectLoaded}"
                             Margin="0,2" Padding="10,8"/>
 
-                    <Button Content="Copy"
+                    <Button Content="5. Copy"
                             Command="{Binding NavigateToCommand}"
                             CommandParameter="Copy"
+                            IsEnabled="{Binding IsProjectLoaded}"
+                            Margin="0,2" Padding="10,8"/>
+
+                    <Button Content="6. Verify (Optional)"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="Verification"
                             IsEnabled="{Binding IsProjectLoaded}"
                             Margin="0,2" Padding="10,8"/>
 

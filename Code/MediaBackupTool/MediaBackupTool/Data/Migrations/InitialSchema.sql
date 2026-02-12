@@ -67,7 +67,9 @@ CREATE INDEX IF NOT EXISTS IX_FileInstances_SizeBytes ON FileInstances(SizeBytes
 CREATE INDEX IF NOT EXISTS IX_FileInstances_Status ON FileInstances(Status);
 CREATE INDEX IF NOT EXISTS IX_FileInstances_ScanRootId ON FileInstances(ScanRootId);
 CREATE INDEX IF NOT EXISTS IX_FileInstances_HashId ON FileInstances(HashId);
-CREATE INDEX IF NOT EXISTS IX_FileInstances_ScanRootId_RelativePath ON FileInstances(ScanRootId, RelativePath);
+
+-- Unique constraint to prevent duplicate file entries (same file path in same scan root)
+CREATE UNIQUE INDEX IF NOT EXISTS IX_FileInstances_ScanRootId_RelativePath ON FileInstances(ScanRootId, RelativePath);
 
 -- Hashes table (computed hash values)
 CREATE TABLE IF NOT EXISTS Hashes (

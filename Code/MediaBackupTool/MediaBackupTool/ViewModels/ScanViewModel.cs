@@ -60,6 +60,12 @@ public partial class ScanViewModel : ViewModelBase
     [ObservableProperty]
     private string? _errorMessage;
 
+    [ObservableProperty]
+    private bool _isScanComplete;
+
+    [ObservableProperty]
+    private string _completionMessage = string.Empty;
+
     public string TotalBytesDisplay => FormatBytes(TotalBytesFound);
 
     public ScanViewModel(
@@ -163,11 +169,14 @@ public partial class ScanViewModel : ViewModelBase
 
     private bool CanCancelScan() => IsScanning;
 
-    [RelayCommand]
-    private async Task NavigateToHashAsync()
+    [RelayCommand(CanExecute = nameof(CanNavigateToNext))]
+    private async Task NavigateToNextAsync()
     {
-        await _navigationService.NavigateToAsync("Plan");
+        // Go to Hash page for the next step
+        await _navigationService.NavigateToAsync("Hash");
     }
+
+    private bool CanNavigateToNext() => IsScanComplete && !IsScanning;
 
     [RelayCommand]
     private async Task NavigateBackAsync()
@@ -203,15 +212,19 @@ public partial class ScanViewModel : ViewModelBase
 
             if (e.Success)
             {
+                IsScanComplete = true;
                 StatusMessage = $"Scan complete: {e.TotalFilesFound:N0} files found";
+                CompletionMessage = $"Found {e.TotalFilesFound:N0} media files in {e.Duration:hh\\:mm\\:ss}. " +
+                    $"Click 'Next: Hash Files' to compute hashes and detect duplicates.";
                 _logger.LogInformation("Scan completed successfully: {Files} files in {Duration}",
                     e.TotalFilesFound, e.Duration);
 
-                // Transition to next state
+                // Stay in Hashing state (was transitioned when scan completed)
                 _stateManager.TryTransitionTo(AppState.Hashing, "Scan completed");
             }
             else
             {
+                IsScanComplete = false;
                 StatusMessage = e.ErrorMessage ?? "Scan failed";
                 ErrorMessage = e.ErrorMessage;
                 _stateManager.TryTransitionTo(AppState.Idle, "Scan failed or cancelled");
@@ -222,6 +235,7 @@ public partial class ScanViewModel : ViewModelBase
             PauseScanCommand.NotifyCanExecuteChanged();
             ResumeScanCommand.NotifyCanExecuteChanged();
             CancelScanCommand.NotifyCanExecuteChanged();
+            NavigateToNextCommand.NotifyCanExecuteChanged();
         });
     }
 
@@ -235,6 +249,8 @@ public partial class ScanViewModel : ViewModelBase
         FilesPerSecond = 0;
         ErrorCount = 0;
         ElapsedTime = TimeSpan.Zero;
+        IsScanComplete = false;
+        CompletionMessage = string.Empty;
     }
 
     private static string TruncatePath(string path, int maxLength)
